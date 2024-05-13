@@ -178,8 +178,8 @@ void ili9225_draw_bitmap(uint16_t *bitMap, uint16_t width, uint16_t height, tran
     ili9225_set_dc(DATA);
     if (xferMethod == PLAINSPI) {
         HAL_SPI_Transmit(&hspi4, (uint8_t *)bitMap, width * height, 100);
+        ili9225_set_cs(STATE_DISABLE);
     } else if (xferMethod == DMA) {
         HAL_SPI_Transmit_DMA(&hspi4, (uint8_t *)bitMap, width * height);
     }
-    ili9225_set_cs(STATE_DISABLE);
 }

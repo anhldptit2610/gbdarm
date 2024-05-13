@@ -46,12 +46,14 @@
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define FRAME_BUFFER      __attribute__((section(".frame_buffer"), used))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+FRAME_BUFFER uint16_t frontFrameBuffer[SCREEN_HEIGHT * SCREEN_WIDTH];
+FRAME_BUFFER uint16_t backFrameBuffer[SCREEN_HEIGHT * SCREEN_WIDTH];
 struct gb gb;
 uint8_t rom[256 * KiB];
 /* USER CODE END PV */
@@ -64,6 +66,14 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void system_init(void)
+{
+  for (int i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++) {
+    frontFrameBuffer[i] = ILI9225_WHITE;
+    backFrameBuffer[i] = ILI9225_BLACK;
+  }
+}
 
 void rom_load(void)
 {
@@ -114,6 +124,20 @@ static void MPU_Config(void)
   MPU_InitStruct.TypeExtField     = MPU_TEX_LEVEL1;
   MPU_InitStruct.SubRegionDisable = 0x00;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /* configure the D2 RAM region, make it non-cacheable*/
+  MPU_InitStruct.Enable = MPU_REGION_ENABLE;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER0;
+  MPU_InitStruct.BaseAddress = 0x30000000;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_128KB;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_BUFFERABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_NOT_SHAREABLE;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  MPU_InitStruct.SubRegionDisable = 0x00;
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
 	
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
@@ -130,6 +154,9 @@ static void CPU_CACHE_Enable(void)
 
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
+  ili9225_set_cs(STATE_DISABLE);
+  gb.whichBuffer = (gb.whichBuffer == FRONT) ? BACK : FRONT;
+  gb.frontBufferPtr = (gb.whichBuffer == FRONT) ? frontFrameBuffer : backFrameBuffer;
 }
 
 /* USER CODE END 0 */
@@ -174,10 +201,15 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  gb.frontBufferPtr = frontFrameBuffer;
+  gb.backBufferPtr = backFrameBuffer;
+  gb.whichBuffer = FRONT;
+  system_init();
   rom_load();
   ili9225_init();
   cartridge_load(&gb, rom);
   load_state_after_booting(&gb);
+  ili9225_set_gram_ptr(153, 0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -187,11 +219,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    ili9225_draw_bitmap(gb.frontBufferPtr, SCREEN_WIDTH, SCREEN_HEIGHT, DMA);
     while (!gb.ppu.frameReady)
       cpu_step(&gb);
-    gb.ppu.frameReady = false;
+    if (gb.whichBuffer == BACK) {
+      gb.backBufferPtr = frontFrameBuffer;
+    } else if (gb.whichBuffer == FRONT) {
+      gb.backBufferPtr = backFrameBuffer;
+    }
     ili9225_set_gram_ptr(153, 0);
-    ili9225_draw_bitmap(gb.frameBuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PLAINSPI);
+    gb.ppu.frameReady = false;
   }
   /* USER CODE END 3 */
 }

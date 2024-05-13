@@ -113,6 +113,11 @@ enum IO_REGIONS {
 };
 
 typedef enum {
+    FRONT,
+    BACK 
+} which_buffer_t;
+
+typedef enum {
     NORMAL,
     HALT,
     HALT_BUG,
@@ -381,7 +386,9 @@ struct serial {
 };
 
 struct gb {
-    uint16_t frameBuffer[SCREEN_HEIGHT * SCREEN_WIDTH];
+    which_buffer_t whichBuffer; 
+    uint16_t *frontBufferPtr;
+    uint16_t *backBufferPtr;
     uint8_t vRAM[0x2000];
     uint8_t externalRAM[8 * KiB];
     uint8_t workRAM[0x2000];
@@ -1721,7 +1728,7 @@ void ppu_draw_scanline(struct gb *gb)
             colorIDHigh = (bus_read(gb, tile_addr + (gb->ppu.windowLineCounter % 8) * 2 + 1) >> (7 - (windowOffset % 8))) & 0x01;
             colorID[i] = colorIDLow | (colorIDHigh << 1);
             color[i] = GET_COLOR_ID(BGP, colorIDLow | (colorIDHigh << 1));
-            gb->frameBuffer[i + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
+            gb->backBufferPtr[i + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
             windowOffset++;
         }
         windowOffset = 0;
@@ -1744,7 +1751,7 @@ void ppu_draw_scanline(struct gb *gb)
         colorIDHigh = (bus_read(gb, tile_addr + (offsetY % 8) * 2 + 1) >> (7 - (offsetX % 8))) & 0x01;
         colorID[i] = colorIDLow | (colorIDHigh << 1);
         color[i] = GET_COLOR_ID(BGP, colorID[i]);
-        gb->frameBuffer[i + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
+        gb->backBufferPtr[i + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
     }
 
 sprite:
@@ -1772,7 +1779,7 @@ sprite:
                 ((pixel_type[j] == SPRITE) && (colorID[j] > 0 && !GET_COLOR(colorIDLow, colorIDHigh))))
                 continue;
             color[j] = GET_COLOR_ID(gb->ppu.oamEntry[i].attributes.dmgPalette, GET_COLOR(colorIDLow, colorIDHigh));
-            gb->frameBuffer[j + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(gb->ppu.oamEntry[i].attributes.dmgPalette, GET_COLOR(colorIDLow, colorIDHigh))];
+            gb->backBufferPtr[j + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(gb->ppu.oamEntry[i].attributes.dmgPalette, GET_COLOR(colorIDLow, colorIDHigh))];
             colorID[j] = GET_COLOR(colorIDLow, colorIDHigh);
             pixel_type[j] = SPRITE;
         }
