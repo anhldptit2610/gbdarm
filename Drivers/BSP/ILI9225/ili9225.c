@@ -51,12 +51,12 @@ void ili9225_init(void)
     ili9225_set_rst(STATE_DISABLE);
     ili9225_set_cs(STATE_DISABLE);
     ili9225_set_dc(COMMAND);
-    HAL_Delay(1);
+    HAL_Delay(10);
 
     ili9225_set_rst(STATE_ENABLE);
-    HAL_Delay(50);
+    HAL_Delay(20);
     ili9225_set_rst(STATE_DISABLE);
-    HAL_Delay(100);
+    HAL_Delay(50);
 
     {
         struct commandAndData commands[] = {

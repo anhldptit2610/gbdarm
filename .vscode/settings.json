@@ -1,7 +1,6 @@
 {
     "files.associations": {
-        "ili9225.h": "c",
-        "main.h": "c",
-        "spi.h": "c"
+        "kirby_dream_land.gb.h": "c",
+        "super_mario_land.gb.h": "c"
     }
 }
