@@ -68,6 +68,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PAPin PAPin PAPin PAPin
+                           PAPin PAPin PAPin PAPin */
+  GPIO_InitStruct.Pin = JOYPAD_SELECT_Pin|JOYPAD_START_Pin|JOYPAD_B_Pin|JOYPAD_A_Pin
+                          |JOYPAD_LEFT_Pin|JOYPAD_RIGHT_Pin|JOYPAD_UP_Pin|JOYPAD_DOWN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 2 */

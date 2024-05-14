@@ -72,7 +72,7 @@ FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
 /* Define output sections */
 SECTIONS
 {
-  /* DMA framebuffers */
+  /* DMA frame buffers */
   .frame_buffer(NOLOAD) : /* space before ':' is critical */
   {
     *.(frame_buffer)

@@ -90,6 +90,36 @@ void rom_load(void)
   fResult = f_mount(NULL, "", 0);
 }
 
+void joypad_check(void)
+{
+  bool left, right, up, down, select, start, a, b;
+
+  left = gb.joypad.button[JOYPAD_LEFT]; 
+  right = gb.joypad.button[JOYPAD_RIGHT]; 
+  up = gb.joypad.button[JOYPAD_UP]; 
+  down = gb.joypad.button[JOYPAD_DOWN]; 
+  select = gb.joypad.button[JOYPAD_SELECT];
+  start = gb.joypad.button[JOYPAD_START];
+  a = gb.joypad.button[JOYPAD_A];
+  b = gb.joypad.button[JOYPAD_B];
+  gb.joypad.button[JOYPAD_LEFT] = HAL_GPIO_ReadPin(JOYPAD_LEFT_GPIO_Port, JOYPAD_LEFT_Pin);
+  gb.joypad.button[JOYPAD_RIGHT] = HAL_GPIO_ReadPin(JOYPAD_RIGHT_GPIO_Port, JOYPAD_RIGHT_Pin);
+  gb.joypad.button[JOYPAD_UP] = HAL_GPIO_ReadPin(JOYPAD_UP_GPIO_Port, JOYPAD_UP_Pin);
+  gb.joypad.button[JOYPAD_DOWN] = HAL_GPIO_ReadPin(JOYPAD_DOWN_GPIO_Port, JOYPAD_UP_Pin);
+  gb.joypad.button[JOYPAD_SELECT] = HAL_GPIO_ReadPin(JOYPAD_SELECT_GPIO_Port, JOYPAD_SELECT_Pin);
+  gb.joypad.button[JOYPAD_START] = HAL_GPIO_ReadPin(JOYPAD_START_GPIO_Port, JOYPAD_START_Pin);
+  gb.joypad.button[JOYPAD_A] = HAL_GPIO_ReadPin(JOYPAD_A_GPIO_Port, JOYPAD_A_Pin);
+  gb.joypad.button[JOYPAD_B] = HAL_GPIO_ReadPin(JOYPAD_B_GPIO_Port, JOYPAD_B_Pin);
+
+  // request interrupt if any button is pressed down
+  if (IS_FALLING_EDGE(left, gb.joypad.button[JOYPAD_LEFT]) || IS_FALLING_EDGE(right, gb.joypad.button[JOYPAD_RIGHT]) ||
+      IS_FALLING_EDGE(up, gb.joypad.button[JOYPAD_UP]) || IS_FALLING_EDGE(down, gb.joypad.button[JOYPAD_DOWN]) ||
+      IS_FALLING_EDGE(select, gb.joypad.button[JOYPAD_SELECT]) || IS_FALLING_EDGE(start, gb.joypad.button[JOYPAD_START]) ||
+      IS_FALLING_EDGE(a, gb.joypad.button[JOYPAD_A]) || IS_FALLING_EDGE(b, gb.joypad.button[JOYPAD_B])) {
+    gb.interrupt.flag |= INTERRUPT_SRC_JOYPAD;
+  }
+}
+
 static void MPU_Config(void)
 {
   MPU_Region_InitTypeDef MPU_InitStruct = {0};
@@ -222,6 +252,7 @@ int main(void)
     ili9225_draw_bitmap(gb.frontBufferPtr, SCREEN_WIDTH, SCREEN_HEIGHT, DMA);
     while (!gb.ppu.frameReady)
       cpu_step(&gb);
+    joypad_check();
     if (gb.whichBuffer == BACK) {
       gb.backBufferPtr = frontFrameBuffer;
     } else if (gb.whichBuffer == FRONT) {
