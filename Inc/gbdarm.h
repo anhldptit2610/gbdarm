@@ -1728,6 +1728,7 @@ void ppu_draw_scanline(struct gb *gb)
             colorIDHigh = (bus_read(gb, tile_addr + (gb->ppu.windowLineCounter % 8) * 2 + 1) >> (7 - (windowOffset % 8))) & 0x01;
             colorID[i] = colorIDLow | (colorIDHigh << 1);
             color[i] = GET_COLOR_ID(BGP, colorIDLow | (colorIDHigh << 1));
+            // gb->backBufferPtr[i + gb->ppu.ly * LCD_HEIGHT] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
             gb->backBufferPtr[i + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
             windowOffset++;
         }
@@ -1751,6 +1752,7 @@ void ppu_draw_scanline(struct gb *gb)
         colorIDHigh = (bus_read(gb, tile_addr + (offsetY % 8) * 2 + 1) >> (7 - (offsetX % 8))) & 0x01;
         colorID[i] = colorIDLow | (colorIDHigh << 1);
         color[i] = GET_COLOR_ID(BGP, colorID[i]);
+        // gb->backBufferPtr[i + gb->ppu.ly * LCD_HEIGHT] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
         gb->backBufferPtr[i + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(BGP, colorID[i])];
     }
 
@@ -1779,6 +1781,7 @@ sprite:
                 ((pixel_type[j] == SPRITE) && (colorID[j] > 0 && !GET_COLOR(colorIDLow, colorIDHigh))))
                 continue;
             color[j] = GET_COLOR_ID(gb->ppu.oamEntry[i].attributes.dmgPalette, GET_COLOR(colorIDLow, colorIDHigh));
+            // gb->backBufferPtr[j + gb->ppu.ly * LCD_HEIGHT] = ili9225Palette[GET_COLOR_ID(gb->ppu.oamEntry[i].attributes.dmgPalette, GET_COLOR(colorIDLow, colorIDHigh))];
             gb->backBufferPtr[j + gb->ppu.ly * SCREEN_WIDTH] = ili9225Palette[GET_COLOR_ID(gb->ppu.oamEntry[i].attributes.dmgPalette, GET_COLOR(colorIDLow, colorIDHigh))];
             colorID[j] = GET_COLOR(colorIDLow, colorIDHigh);
             pixel_type[j] = SPRITE;
